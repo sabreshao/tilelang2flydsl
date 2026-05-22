@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tilelang2flydsl"
+version = "0.1.0"
+description = "Source-to-source translator from TileLang kernels to FlyDSL kernels."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "tilelang2flydsl contributors" }]
+
+[project.optional-dependencies]
+format = ["black>=24.0"]
+dev = ["pytest>=7", "black>=24.0", "ruff>=0.5"]
+
+[project.scripts]
+tilelang2flydsl = "tilelang2flydsl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tilelang2flydsl*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
