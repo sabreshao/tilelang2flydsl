@@ -125,6 +125,30 @@ def _install_flydsl_stub() -> None:
 
     sys.modules["flydsl"] = flydsl
 
+    # The retargeted emitter does `import flydsl.expr as fx`, so install the
+    # same symbol surface on the `expr` submodule as well.
+    expr = types.ModuleType("flydsl.expr")
+    for n in dir(flydsl):
+        if not n.startswith("_"):
+            setattr(expr, n, getattr(flydsl, n))
+    # Additional names referenced by the GEMM template that aren't on the
+    # top-level stub.
+    for n in [
+        "TiledMma", "TiledCopy", "UniversalCopy128b",
+        "SwizzleType", "make_composed_layout", "make_ordered_layout",
+        "make_fragment_like", "make_tiled_copy_A", "make_tiled_copy_B",
+        "make_tiled_copy_C", "make_tile", "static", "get_dyn_shared",
+        "make_view", "add_offset", "arith", "T", "GemmTraversalOrder",
+    ]:
+        if not hasattr(expr, n):
+            setattr(expr, n, _Anything() if n[0].islower() else _Anything)
+    flydsl.expr = expr
+    sys.modules["flydsl.expr"] = expr
+    # Re-link the rocdl / gpu submodules so `flydsl.expr.rocdl` resolves.
+    expr.rocdl = flydsl.rocdl
+    expr.gpu = flydsl.gpu
+    sys.modules["flydsl.expr.rocdl"] = flydsl.rocdl
+
 
 _install_flydsl_stub()
 

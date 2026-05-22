@@ -13,7 +13,7 @@ def batched_transpose_kernel(x: fx.Tensor, out: fx.Tensor, num_batches: fx.Int32
     out_g = make_buffer_tensor(out)
     smem = fx.gpu.SharedAllocator(static=True)
     out_shared = smem.alloc((block_y, block_x + block_k), dtype)
-    row, col = (tid // num_threads_per_row, tid % num_threads_per_row)
+    (row, col) = (tid // num_threads_per_row, tid % num_threads_per_row)
     # T.assume(shape_x % block_x == 0)
     # T.assume(shape_y % block_y == 0)
     # T.assume(stride_x % block_k == 0)

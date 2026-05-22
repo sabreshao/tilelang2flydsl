@@ -75,21 +75,25 @@ def test_parse_transpose():
 
 def test_translate_gemm_smoke():
     src = translate_file(str(FIXTURES / "example_gemm.py"))
+    # LDS-staged template; mirrors tests/runnable/example_gemm.py.
     for needle in [
-        "import flydsl as fx",
+        "import flydsl.expr as fx",
         "@flyc.kernel",
         "@flyc.jit",
-        "SharedAllocator",
-        "make_mma_atom",
-        "MFMA(",
-        "make_tiled_mma",
-        "make_tiled_copy",
-        "make_copy_atom",
+        "fx.rocdl.make_buffer_tensor",
+        "fx.get_dyn_shared",
+        "fx.make_composed_layout",
+        "make_tiled_copy_A",
+        "make_tiled_copy_B",
+        "make_fragment_A",
+        "make_fragment_B",
+        "make_fragment_C",
         "fx.gemm(",
-        "fx.fill(",
         "fx.gpu.barrier(",
         "fx.block_idx",
         "fx.thread_idx",
+        "GemmTraversalOrder",
+        "range_constexpr",
     ]:
         assert needle in src, f"missing {needle} in:\n{src}"
     # py_compile the generated source
@@ -102,6 +106,8 @@ def test_translate_gemm_smoke():
 def test_translate_transpose_smoke():
     src = translate_file(str(FIXTURES / "batched_transpose_kernel.py"))
     for needle in [
+        # Transpose still goes through the per-statement fallback lowerer (not
+        # the GEMM template) — keep the looser shape assertions here.
         "import flydsl as fx",
         "@flyc.kernel",
         "@flyc.jit",

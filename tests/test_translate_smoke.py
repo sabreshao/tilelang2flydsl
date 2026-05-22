@@ -25,19 +25,25 @@ def test_translate_produces_compilable_source(tmp_path, fixture):
 
 def test_translate_gemm_contains_expected_idioms():
     src = translate_file(str(FIXTURES / "example_gemm.py"))
-    # Allocations, MMA atom, tiled copy, and the GEMM call must appear.
+    # LDS-staged template output (runnable on MI300X — see tests/runnable/example_gemm.py).
     for needle in [
-        "SharedAllocator",
-        "make_mma_atom",
-        "MFMA(",
-        "make_tiled_mma",
-        "make_tiled_copy",
-        "make_copy_atom",
+        "import flydsl.expr as fx",
+        "fx.rocdl.make_buffer_tensor",
+        "fx.get_dyn_shared",
+        "fx.make_composed_layout",
+        "fx.make_ordered_layout",
+        "fx.add_offset",
+        "fx.flat_divide",
+        "make_tiled_copy_A",
+        "make_tiled_copy_B",
+        "make_tiled_copy_C",
+        "make_fragment_A",
+        "make_fragment_B",
+        "make_fragment_C",
         "fx.gemm(",
-        "fx.fill(",
         "fx.gpu.barrier(",
-        "block_idx",
-        "thread_idx",
+        "GemmTraversalOrder",
+        "range_constexpr",
     ]:
         assert needle in src, f"missing {needle} in emitted source:\n{src}"
 
