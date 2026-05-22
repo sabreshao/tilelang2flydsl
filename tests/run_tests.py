@@ -106,14 +106,17 @@ def test_translate_gemm_smoke():
 def test_translate_transpose_smoke():
     src = translate_file(str(FIXTURES / "batched_transpose_kernel.py"))
     for needle in [
-        # Transpose still goes through the per-statement fallback lowerer (not
-        # the GEMM template) — keep the looser shape assertions here.
-        "import flydsl as fx",
+        # Transpose template output — direct gmem→gmem element-wise transpose
+        # (LDS swizzle from the TileLang fixture is intentionally dropped).
+        "import flydsl.expr as fx",
         "@flyc.kernel",
         "@flyc.jit",
-        "make_buffer_tensor",
-        "fx.gpu.barrier(",
+        "fx.rocdl.make_buffer_tensor",
+        "BLOCK_X",
+        "BLOCK_Y",
+        "NUM_THREADS",
         "range_constexpr",
+        "fx.block_idx.z",
     ]:
         assert needle in src, f"missing {needle} in:\n{src}"
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:

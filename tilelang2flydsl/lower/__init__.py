@@ -196,14 +196,19 @@ class Lowerer:
 
     # public ----------------------------------------------------------------
     def build_module(self) -> ast.Module:
-        # Fast path: standard TileLang GEMM pattern → emit the validated
-        # LDS-staged FlyDSL form from a template. Bypasses the per-statement
-        # lowerer entirely.
-        from . import gemm_template
+        # Fast paths: pattern-match known kernel shapes and emit validated
+        # FlyDSL forms directly. Bypasses the per-statement lowerer.
+        from . import gemm_template, transpose_template
 
         info = gemm_template.match(self.ir)
         if info is not None:
             mod = gemm_template.emit(info)
+            ast.fix_missing_locations(mod)
+            return mod
+
+        info = transpose_template.match(self.ir)
+        if info is not None:
+            mod = transpose_template.emit(info)
             ast.fix_missing_locations(mod)
             return mod
 

@@ -50,11 +50,16 @@ def test_translate_gemm_contains_expected_idioms():
 
 def test_translate_transpose_contains_expected_idioms():
     src = translate_file(str(FIXTURES / "batched_transpose_kernel.py"))
+    # Transpose template: direct gmem→gmem element-wise transpose. LDS staging
+    # + swizzle from the TileLang fixture is intentionally dropped.
     for needle in [
-        "make_buffer_tensor",
-        "SharedAllocator",
-        "fx.gpu.barrier(",
+        "import flydsl.expr as fx",
+        "fx.rocdl.make_buffer_tensor",
+        "BLOCK_X",
+        "BLOCK_Y",
+        "NUM_THREADS",
         "range_constexpr",
+        "fx.block_idx.z",
     ]:
         assert needle in src, f"missing {needle} in emitted source:\n{src}"
 
