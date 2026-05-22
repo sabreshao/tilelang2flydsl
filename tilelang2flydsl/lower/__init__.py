@@ -198,7 +198,7 @@ class Lowerer:
     def build_module(self) -> ast.Module:
         # Fast paths: pattern-match known kernel shapes and emit validated
         # FlyDSL forms directly. Bypasses the per-statement lowerer.
-        from . import gemm_template, transpose_template
+        from . import gemm_template, reduce_fused_template, transpose_template
 
         info = gemm_template.match(self.ir)
         if info is not None:
@@ -209,6 +209,12 @@ class Lowerer:
         info = transpose_template.match(self.ir)
         if info is not None:
             mod = transpose_template.emit(info)
+            ast.fix_missing_locations(mod)
+            return mod
+
+        info = reduce_fused_template.match(self.ir)
+        if info is not None:
+            mod = reduce_fused_template.emit(info)
             ast.fix_missing_locations(mod)
             return mod
 
