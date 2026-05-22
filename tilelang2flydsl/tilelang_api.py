@@ -115,14 +115,22 @@ NVIDIA_ONLY: set[str] = {
     "ptx_arrive_cluster_barrier",
 }
 
-# Symbols within TileLang's surface that v1 doesn't yet handle but might later.
-UNSUPPORTED_FOR_NOW: set[str] = {
+# Reduction calls — parsed as Raw stmts so the IR has them visible for template
+# matchers. The fallback lowerer comments them; templates that handle a kernel
+# family containing these (e.g. lower/topk_gate_template.py) emit the
+# wave-shuffle equivalent directly.
+_REDUCTION_CALLS: set[str] = {
     "reduce",
     "reduce_sum",
     "reduce_max",
     "reduce_min",
     "reduce_abssum",
     "reduce_absmax",
+    "finalize_reducer",
+}
+
+# Symbols within TileLang's surface that v1 doesn't yet handle but might later.
+UNSUPPORTED_FOR_NOW: set[str] = {
     "reduce_bitand",
     "reduce_bitor",
     "warp_reduce_sum",
@@ -158,7 +166,7 @@ UNSUPPORTED_FOR_NOW: set[str] = {
 
 def classify_symbol(name: str) -> str:
     """Return one of: 'supported', 'droppable', 'nvidia_only', 'unsupported', 'unknown'."""
-    if name in SUPPORTED_CALLS:
+    if name in SUPPORTED_CALLS or name in _REDUCTION_CALLS:
         return "supported"
     if name in DROPPABLE_ANNOTATIONS:
         return "droppable"
